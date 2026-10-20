@@ -1,0 +1,1477 @@
+[
+ {
+  "slug": "notion",
+  "name": "Notion",
+  "website": "https://www.notion.so",
+  "difficulty": 1,
+  "difficultyLabel": "Easy",
+  "summary": "Self-serve. You create a public connection in the Notion developer portal and get a client ID and secret straight away. No approval step was found in the docs for installing in any workspace.",
+  "time": {
+   "devReady": "About 30 minutes",
+   "production": "Same day, if your redirect URL and consent copy are ready",
+   "approvalWait": "No approval wait found in the docs I read"
+  },
+  "managed": true,
+  "stages": [
+   {
+    "title": "Create the public connection",
+    "time": "10 min",
+    "steps": [
+     "Open the Notion developer portal and create a new public connection.",
+     "Fill in connection name, description, and your redirect URI(s) under the OAuth configuration.",
+     "Choose installation scope: Any workspace, or Selected workspaces only. This cannot be changed after creation, so pick Any workspace if end users will install it."
+    ]
+   },
+   {
+    "title": "Copy credentials",
+    "time": "2 min",
+    "steps": [
+     "Open the Configuration tab and copy the OAuth client ID and client secret.",
+     "Keep the secret on your server. Never ship it in client code."
+    ]
+   },
+   {
+    "title": "Send users to authorize",
+    "time": "15 min",
+    "steps": [
+     "Redirect the user to https://api.notion.com/v1/oauth/authorize with client_id, redirect_uri, response_type=code and owner=user.",
+     "Notion asks the user to pick the pages to share, then redirects back with a code (or an error=access_denied if they cancel).",
+     "Exchange the code for a token using the create-token endpoint with your client ID and secret."
+    ]
+   }
+  ],
+  "requirements": [
+   "A Notion workspace where you can open the developer portal",
+   "A redirect URI you control (for local testing and for production)",
+   "A place to store the client secret and per-user tokens"
+  ],
+  "blockers": [
+   {
+    "issue": "Users only share the pages they pick at install time",
+    "fix": "Tell users to select the pages or databases your agent needs. Notion has a guide for creating databases and pages in the user's workspace right after install so you do not depend on manual sharing."
+   },
+   {
+    "issue": "Installation scope was set wrong",
+    "fix": "The scope is fixed at creation. Create a new connection with the right scope."
+   },
+   {
+    "issue": "Redirect URI mismatch",
+    "fix": "The redirect_uri in the authorize and token calls must match the one in the portal."
+   }
+  ],
+  "agentCan": [
+   "Draft the authorize URL and the token exchange code",
+   "Write and run a local OAuth test against a test workspace if you give it one",
+   "Check your redirect URI and scope settings against the docs"
+  ],
+  "youDo": [
+   "Create the connection in the developer portal while signed in (needs your Notion login)",
+   "Store the client secret safely",
+   "Approve the install on the consent screen"
+  ],
+  "claims": [
+   {
+    "text": "A public connection is an OAuth connection that users install into their own workspaces, and each user gets their own token.",
+    "status": "verified",
+    "src": 0
+   },
+   {
+    "text": "Installation scope (Any workspace or Selected workspaces) cannot be changed after creation.",
+    "status": "verified",
+    "src": 1
+   },
+   {
+    "text": "Client ID and secret are on the Configuration tab after creation.",
+    "status": "verified",
+    "src": 0
+   },
+   {
+    "text": "No review or approval is required to use a public connection in any workspace.",
+    "status": "inferred",
+    "note": "I found no approval step in these two pages, but I did not search for a Notion directory or gallery listing review. Treat as likely, not confirmed."
+   },
+   {
+    "text": "Exact current rate limits and token lifetime.",
+    "status": "unverified",
+    "note": "Not checked."
+   }
+  ],
+  "sources": [
+   {
+    "title": "Notion: Public connections",
+    "url": "https://developers.notion.com/guides/get-started/public-connections"
+   },
+   {
+    "title": "Notion: Authorization",
+    "url": "https://developers.notion.com/guides/get-started/authorization"
+   }
+  ],
+  "tested": "Docs read only. No Notion account was used and no OAuth flow was run."
+ },
+ {
+  "slug": "slack",
+  "name": "Slack",
+  "website": "https://slack.com",
+  "difficulty": 2,
+  "difficultyLabel": "Moderate",
+  "summary": "Creating the app and installing it in your own workspace is self-serve. Giving it to other companies is also self-serve, but unlisted commercial apps hit a low rate limit on reading message history until they pass Slack Marketplace review.",
+  "time": {
+   "devReady": "About 1 hour",
+   "production": "Days to weeks if you need Marketplace approval",
+   "approvalWait": "Marketplace review time not stated in the pages I read"
+  },
+  "managed": true,
+  "stages": [
+   {
+    "title": "Create the app and install it in your own workspace",
+    "time": "30 min",
+    "steps": [
+     "Create a Slack app and add the bot and user scopes you need.",
+     "Install it to your development workspace to test."
+    ]
+   },
+   {
+    "title": "Turn on distribution so other workspaces can install it",
+    "time": "20 min",
+    "steps": [
+     "Set up an OAuth 2.0 flow with your OAuth redirect URLs.",
+     "In Manage Distribution, go to Share Your App with Other Workspaces, finish the checklist, and click Activate Public Distribution.",
+     "Deactivating distribution later removes the app from every workspace except the original one."
+    ]
+   },
+   {
+    "title": "Decide if you need Marketplace approval",
+    "time": "Varies",
+    "steps": [
+     "If your app reads channel history for customers (conversations.history or conversations.replies), plan for Marketplace approval. Without it, new commercial installs are limited to 1 request per minute on those methods.",
+     "Check the Marketplace guidelines and submit for review if you want the higher limits and a listing."
+    ]
+   }
+  ],
+  "requirements": [
+   "Slack developer account and a workspace to test in",
+   "OAuth redirect URLs on a domain you control",
+   "Marketplace only: app listing copy, support that answers within 2 business days, and enough usage (see blockers)"
+  ],
+  "blockers": [
+   {
+    "issue": "conversations.history and conversations.replies are limited to 1 request per minute for commercially distributed apps created after May 29, 2025 that are not in the Marketplace",
+    "fix": "Get Marketplace approval, or design the agent to use events and fewer history reads. Internal customer-built apps are not affected (50+ per minute)."
+   },
+   {
+    "issue": "Marketplace does not suit apps with fewer than 10 active workspaces and fewer than 10 weekly active users",
+    "fix": "Check the 'Apps unsuitable for Slack Marketplace' list before you invest in the submission. Do not plan around it for a prototype."
+   },
+   {
+    "issue": "Short description is limited to 10 words",
+    "fix": "Write it early. It shows in Marketplace search results."
+   }
+  ],
+  "agentCan": [
+   "Generate the manifest and scopes list from your use case",
+   "Write the OAuth install and callback code",
+   "Check your app against the Marketplace guideline list and draft the listing text"
+  ],
+  "youDo": [
+   "Create the app and activate distribution while signed in to Slack",
+   "Submit the Marketplace review and answer reviewer questions",
+   "Run a support inbox that replies within 2 business days (Marketplace expectation)"
+  ],
+  "claims": [
+   {
+    "text": "Non-Marketplace commercially distributed apps created after 2025-05-29 get 1 request per minute on conversations.history and conversations.replies.",
+    "status": "verified",
+    "src": 2
+   },
+   {
+    "text": "Existing installations of older unlisted apps are not subject to the new limits, and internal customer-built apps are not affected.",
+    "status": "verified",
+    "src": 2
+   },
+   {
+    "text": "Public distribution is turned on in Manage Distribution with Activate Public Distribution, and needs an OAuth 2.0 flow.",
+    "status": "verified",
+    "src": 1
+   },
+   {
+    "text": "Marketplace is not suitable for apps with fewer than 10 active workspaces and fewer than 10 weekly active users.",
+    "status": "verified",
+    "src": 3
+   },
+   {
+    "text": "Slack does not charge for Marketplace inclusion.",
+    "status": "verified",
+    "src": 2
+   },
+   {
+    "text": "How long Marketplace review takes.",
+    "status": "unverified",
+    "note": "I did not find a stated duration in the pages I read. Ask Slack or check their review process blog."
+   }
+  ],
+  "sources": [
+   {
+    "title": "Slack: Rate limits",
+    "url": "https://docs.slack.dev/apis/web-api/rate-limits"
+   },
+   {
+    "title": "Slack: Distributing apps",
+    "url": "https://docs.slack.dev/app-management/distribution"
+   },
+   {
+    "title": "Slack changelog: rate limit changes for non-Marketplace apps (2025-05-29)",
+    "url": "https://docs.slack.dev/changelog/2025/05/29/rate-limit-changes-for-non-marketplace-apps/"
+   },
+   {
+    "title": "Slack: Marketplace guidelines and requirements",
+    "url": "https://docs.slack.dev/slack-marketplace/slack-marketplace-app-guidelines-and-requirements/"
+   }
+  ],
+  "tested": "Docs read only. No Slack app was created."
+ },
+ {
+  "slug": "hubspot",
+  "name": "HubSpot",
+  "website": "https://www.hubspot.com",
+  "difficulty": 3,
+  "difficultyLabel": "Moderate to hard",
+  "summary": "You can build and test fast, but install caps apply until the app is listed: 10 allowlisted accounts for a private OAuth app, 25 for a Marketplace app before listing. Listing needs real customer installs first.",
+  "time": {
+   "devReady": "A few hours",
+   "production": "Weeks to months: you need real installs before you can submit a listing",
+   "approvalWait": "Listing is reviewed by hand by HubSpot's Ecosystem Quality team; duration not stated in what I read"
+  },
+  "managed": true,
+  "stages": [
+   {
+    "title": "Build and test with developer test accounts",
+    "time": "Hours",
+    "steps": [
+     "Configure auth and distribution in your project's app-hsmeta.json, including redirectUrls.",
+     "Install in developer test accounts. Static token apps install in 1 standard account plus up to 10 developer test accounts."
+    ]
+   },
+   {
+    "title": "Pick a distribution mode",
+    "time": "1 hour",
+    "steps": [
+     "Privately distributed OAuth app: up to 10 allowlisted accounts, not counting developer test accounts.",
+     "Marketplace OAuth app before listing: up to 25 accounts. After listing: unlimited."
+    ]
+   },
+   {
+    "title": "Get listed on the Marketplace",
+    "time": "Weeks or more",
+    "steps": [
+     "Reach 3 active installs to submit a listing. An active install is a real customer account with qualifying app activity in the last 30 days.",
+     "Publish a public setup guide URL. HubSpot requires it for a listing.",
+     "Submit the listing. It is reviewed by hand and rejected if it does not meet the criteria.",
+     "Certification needs 60 active installs."
+    ]
+   }
+  ],
+  "requirements": [
+   "HubSpot developer account and developer test accounts",
+   "A public setup guide URL",
+   "Real customers actively using the app (3 to list, 60 to certify)"
+  ],
+  "blockers": [
+   {
+    "issue": "You cannot get to the Marketplace without real customers first",
+    "fix": "Start with the 25-account pre-listing limit, get 3 active installs, then submit."
+   },
+   {
+    "issue": "Install counts: total installs no longer count",
+    "fix": "From Aug 19, 2026 the submission flow enforces active installs, not total installs."
+   },
+   {
+    "issue": "Installing users need the right permissions",
+    "fix": "Users need the Marketplace access permission plus the permission for each scope group the app asks for (for example Import for crm.import). Tell customers up front."
+   }
+  ],
+  "agentCan": [
+   "Draft app-hsmeta.json with scopes and redirect URLs",
+   "Draft the public setup guide and listing text against the requirements page",
+   "Track active-install counts if you give it read access"
+  ],
+  "youDo": [
+   "Create the developer account and app",
+   "Find and onboard the first 3 active customers",
+   "Submit the listing and respond to the review team"
+  ],
+  "claims": [
+   {
+    "text": "Privately distributed OAuth apps: up to 10 allowlisted accounts. Marketplace apps before listing: up to 25. After listing: unlimited.",
+    "status": "verified",
+    "src": 0
+   },
+   {
+    "text": "3 active installs are required to submit a listing, 60 to submit for certification, enforced on active installs from Aug 19, 2026.",
+    "status": "verified",
+    "src": 1
+   },
+   {
+    "text": "Listing submissions are manually reviewed and rejected if they miss the criteria.",
+    "status": "verified",
+    "src": 2
+   },
+   {
+    "text": "A publicly available setup guide URL is required for a listing.",
+    "status": "verified",
+    "src": 3
+   },
+   {
+    "text": "How long the listing review takes.",
+    "status": "unverified",
+    "note": "Not found in the pages I read."
+   },
+   {
+    "text": "Which scopes need extra review.",
+    "status": "unverified",
+    "note": "Not checked."
+   }
+  ],
+  "sources": [
+   {
+    "title": "HubSpot: Manage apps (install limits)",
+    "url": "https://developers.hubspot.com/docs/apps/developer-platform/build-apps/manage-apps-in-hubspot"
+   },
+   {
+    "title": "HubSpot community: how active installs are determined",
+    "url": "https://community.hubspot.com/t/changes-to-marketplace-submission-flow-how-active-installs-are-determined/156427"
+   },
+   {
+    "title": "HubSpot: Marketplace listing requirements",
+    "url": "https://developers.hubspot.com/docs/apps/developer-platform/list-apps/listing-your-app/app-marketplace-listing-requirements"
+   },
+   {
+    "title": "HubSpot: Create an app listing setup guide",
+    "url": "https://developers.hubspot.com/docs/apps/developer-platform/list-apps/listing-your-app/create-an-app-listing-setup-guide"
+   }
+  ],
+  "tested": "Docs read only. No HubSpot account was used."
+ },
+ {
+  "slug": "gmail",
+  "name": "Gmail (Google)",
+  "website": "https://developers.google.com/gmail/api",
+  "difficulty": 5,
+  "difficultyLabel": "Hard",
+  "summary": "Reading or sending a user's Gmail uses restricted scopes. For a public app that means Google's verification plus a yearly third-party security assessment. Google's own estimate is about 6 weeks. Until then you are capped at 100 new users, for the life of the project.",
+  "time": {
+   "devReady": "Under 1 hour for your own testing (inferred, not timed)",
+   "production": "Plan on 6 weeks or more, plus assessment cost and effort",
+   "approvalWait": "Google estimates 2-3 business days for brand verification and about 6 weeks for restricted scope verification. Not guaranteed."
+  },
+  "managed": true,
+  "stages": [
+   {
+    "title": "Set up the project and consent screen",
+    "time": "1 hour",
+    "steps": [
+     "Create a Google Cloud project and OAuth client.",
+     "Configure the consent screen with an accurate app name, logo, home page, support email, and privacy policy link."
+    ]
+   },
+   {
+    "title": "Brand verification",
+    "time": "2-3 business days (Google estimate)",
+    "steps": [
+     "Verify ownership of your domains in Google Search Console, using an account that owns or edits the project.",
+     "Make the home page describe what the app does and link to the privacy policy. The privacy policy must be on the same domain."
+    ]
+   },
+   {
+    "title": "Restricted scope verification",
+    "time": "About 6 weeks (Google estimate)",
+    "steps": [
+     "Submit for verification from the OAuth consent screen. Request only the scopes you need.",
+     "Make the privacy policy say how you access, use, store and share Google data, in line with the Limited Use rules.",
+     "If your app can reach Google data through a server, expect to complete the security assessment."
+    ]
+   },
+   {
+    "title": "Security assessment (CASA)",
+    "time": "Not stated",
+    "steps": [
+     "Google Trust and Safety contacts you when it is time. Do not start before the other steps are done.",
+     "An approved assessor tests your app. Passing gives a Letter of Validation.",
+     "Repeat every year."
+    ]
+   }
+  ],
+  "requirements": [
+   "Domain you own, verified in Search Console",
+   "Public home page and privacy policy on that domain",
+   "Consent screen branding that matches the app",
+   "Security assessment by a Google-approved assessor, repeated yearly"
+  ],
+  "blockers": [
+   {
+    "issue": "100 new-user cap on unverified apps using sensitive or restricted scopes",
+    "fix": "The cap is for the lifetime of the project and cannot be reset. Do not use a production project to test. Use test mode or a separate project."
+   },
+   {
+    "issue": "Requesting a scope you were not approved for",
+    "fix": "Users see the unverified screen again. Make sure the code only asks for scopes listed in the console."
+   },
+   {
+    "issue": "Rejected verification",
+    "fix": "Fix the policy issue, then resubmit with all materials again."
+   },
+   {
+    "issue": "Internal app for your own company only",
+    "fix": "Mark the app Internal if your project is in a Google Workspace organization. Verification is not needed for internal use, personal use, or test environments."
+   }
+  ],
+  "agentCan": [
+   "Draft the privacy policy section and scope justifications",
+   "Check the consent screen fields against the verification list",
+   "Keep the scope list minimal"
+  ],
+  "youDo": [
+   "Own the domain and verify it in Search Console",
+   "Submit for verification and answer Google's emails",
+   "Pay for and complete the yearly security assessment with an approved assessor"
+  ],
+  "claims": [
+   {
+    "text": "Brand verification: 2-3 business days. Sensitive scope: 10 business days. Restricted scope: 6 weeks. Estimates are not guaranteed and depend on developer responsiveness.",
+    "status": "verified",
+    "src": 0
+   },
+   {
+    "text": "Unverified apps with sensitive or restricted scopes have a 100 new-user cap that lasts for the project's lifetime and cannot be reset.",
+    "status": "verified",
+    "src": 0
+   },
+   {
+    "text": "Restricted scope apps need an annual security assessment (CASA); passing gives a Letter of Validation.",
+    "status": "verified",
+    "src": 1
+   },
+   {
+    "text": "Exceptions to verification: personal use, development/testing/staging, service-owned data only, internal use, domain-wide installation.",
+    "status": "verified",
+    "src": 2
+   },
+   {
+    "text": "Cost of the security assessment.",
+    "status": "unverified",
+    "note": "I did not find a price from Google. Assessors set their own fees. Get quotes."
+   },
+   {
+    "text": "Whether the specific Gmail scopes your app needs are restricted.",
+    "status": "unverified",
+    "note": "Check the scope list in the console for your exact scopes."
+   }
+  ],
+  "sources": [
+   {
+    "title": "Google Cloud Help: OAuth verification FAQ",
+    "url": "https://support.google.com/cloud/answer/13463817"
+   },
+   {
+    "title": "Google Cloud Help: Security assessment",
+    "url": "https://support.google.com/cloud/answer/13465431"
+   },
+   {
+    "title": "Google: Restricted scope verification",
+    "url": "https://developers.google.com/identity/protocols/oauth2/production-readiness/restricted-scope-verification"
+   }
+  ],
+  "tested": "Docs read only. No Google Cloud project was submitted.",
+  "dirName": "Gmail"
+ },
+ {
+  "slug": "linkedin",
+  "name": "LinkedIn",
+  "website": "https://developer.linkedin.com",
+  "difficulty": 4,
+  "difficultyLabel": "Hard (for posting and page management)",
+  "summary": "Some APIs are gated products. For managing company pages (Community Management API) LinkedIn only gives access to registered legal organizations with commercial use cases, in two tiers, and the upgrade needs a screen recording of your app.",
+  "time": {
+   "devReady": "Days: apply for the Development Tier first",
+   "production": "Weeks, depending on review",
+   "approvalWait": "Review time not stated in the pages I read"
+  },
+  "managed": true,
+  "stages": [
+   {
+    "title": "Create a developer app",
+    "time": "30 min",
+    "steps": [
+     "Log in to the LinkedIn Developer Portal, go to My Apps, and click Create App.",
+     "Link the app to your company page if the product you want requires it."
+    ]
+   },
+   {
+    "title": "Apply for Community Management API, Development Tier",
+    "time": "Days",
+    "steps": [
+     "Apply through the increasing-access link. Have ready: verified business email, legal organization name, registered address, website, privacy policy.",
+     "Use cases must match LinkedIn's supported solutions."
+    ]
+   },
+   {
+    "title": "Upgrade to Standard Tier",
+    "time": "Days to weeks",
+    "steps": [
+     "After Development Tier approval, complete the Standard Tier request form.",
+     "Submit a screen recording of your app that shows each use case from the form, only your app on screen.",
+     "Request Standard Tier on your existing Advertising API developer application, entering the new app's client ID to skip most questions."
+    ]
+   }
+  ],
+  "requirements": [
+   "Registered legal organization, commercial use case only (for Community Management API)",
+   "Verified business email",
+   "Public website and privacy policy",
+   "Screencast of the app"
+  ],
+  "blockers": [
+   {
+    "issue": "Individuals and non-commercial projects are not eligible for Community Management API",
+    "fix": "Use a registered company. Check whether a different, self-serve product covers your need."
+   },
+   {
+    "issue": "Development Tier has limited API call volume",
+    "fix": "Apply for Standard Tier early. Prepare the screencast while building."
+   },
+   {
+    "issue": "Verification email does not arrive",
+    "fix": "Check spam, junk, social and promotions folders."
+   }
+  ],
+  "agentCan": [
+   "Draft the access request answers from your use case",
+   "Plan the screencast shot list per use case",
+   "Pre-fill the application using the existing client ID"
+  ],
+  "youDo": [
+   "Create the app and submit the request as an authorized company representative",
+   "Record the screencast",
+   "Verify the business email"
+  ],
+  "claims": [
+   {
+    "text": "Community Management API has a Development Tier (limited call volume) and a Standard Tier (full access, requires upgrade).",
+    "status": "verified",
+    "src": 0
+   },
+   {
+    "text": "Only registered legal organizations with commercial use cases can use the Community Management API; business email must be verified.",
+    "status": "verified",
+    "src": 0
+   },
+   {
+    "text": "Standard Tier needs a screencast of each use case.",
+    "status": "verified",
+    "src": 0
+   },
+   {
+    "text": "Sign in with LinkedIn and Share on LinkedIn are self-serve.",
+    "status": "unverified",
+    "note": "Not checked in this pass. Verify on the product catalog before relying on it."
+   },
+   {
+    "text": "Review turnaround times.",
+    "status": "unverified",
+    "note": "Not found."
+   }
+  ],
+  "sources": [
+   {
+    "title": "Microsoft Learn: Community Management overview",
+    "url": "https://learn.microsoft.com/en-us/linkedin/marketing/community-management/community-management-overview"
+   },
+   {
+    "title": "Microsoft Learn: Community Management app review",
+    "url": "https://learn.microsoft.com/en-us/linkedin/marketing/community-management-app-review"
+   },
+   {
+    "title": "LinkedIn product catalog: Community Management API",
+    "url": "https://developer.linkedin.com/product-catalog/marketing/community-management-api"
+   }
+  ],
+  "tested": "Docs read only. No LinkedIn app was created."
+ },
+ {
+  "slug": "zoom",
+  "name": "Zoom",
+  "website": "https://zoom.us",
+  "difficulty": 2,
+  "difficultyLabel": "Moderate",
+  "summary": "Private and beta apps need no review. To let other companies install your app from the Zoom Marketplace you go through a review that Zoom says it answers fast.",
+  "time": {
+   "devReady": "About 1 hour (inferred, not timed)",
+   "production": "About 1-2 weeks including fixes after feedback (inferred from Zoom's stated response times)",
+   "approvalWait": "Zoom: first response within 72 hours (SLA), typically within 36 hours; review team works Monday-Friday"
+  },
+  "managed": true,
+  "stages": [
+   {
+    "title": "Build as a private or beta app",
+    "time": "Hours",
+    "steps": [
+     "Create the app in the Zoom developer console and set scopes.",
+     "Private and beta apps do not require review."
+    ]
+   },
+   {
+    "title": "Prepare the submission",
+    "time": "1-3 days",
+    "steps": [
+     "Fill all required fields: accurate metadata, technical design documentation, and security information.",
+     "Validate your app domains.",
+     "Write a test plan with step-by-step instructions and login credentials for the review team (common rejection reason: insufficient test plan).",
+     "Pick the audience: internal users, or external users via the Marketplace. You can still limit installs to chosen users, domains or organizations."
+    ]
+   },
+   {
+    "title": "Submit and respond to review",
+    "time": "Days to weeks",
+    "steps": [
+     "Submit from the Publish section. The Zoom Marketplace team approves or sends remediation feedback.",
+     "Zoom also offers a Developer Self Assessment to check readiness before you submit."
+    ]
+   }
+  ],
+  "requirements": [
+   "Accurate app listing metadata and branding that follows Zoom's guidelines",
+   "Technical design and security documentation",
+   "Validated app domains",
+   "A clear test plan with test credentials"
+  ],
+  "blockers": [
+   {
+    "issue": "Rejected for an insufficient test plan",
+    "fix": "Give the reviewers each use case, how to test it, and working credentials."
+   },
+   {
+    "issue": "Branding problems",
+    "fix": "Zoom can require changes to app names or content that break its branding rules. Check the guidelines first."
+   }
+  ],
+  "agentCan": [
+   "Draft the technical design and security documents",
+   "Write the test plan from your use cases",
+   "Run the readiness checklist against your listing"
+  ],
+  "youDo": [
+   "Create the app and own the developer account",
+   "Provide a working test account and credentials",
+   "Answer review feedback"
+  ],
+  "claims": [
+   {
+    "text": "First response SLA is 72 hours; typically within 36 hours; the team reviews Monday-Friday.",
+    "status": "verified",
+    "src": 0
+   },
+   {
+    "text": "Private and beta apps do not require review; public and unlisted apps do.",
+    "status": "verified",
+    "src": 1
+   },
+   {
+    "text": "Submission completeness needs accurate metadata, technical design documentation and security information; branding is also reviewed.",
+    "status": "verified",
+    "src": 1
+   },
+   {
+    "text": "You choose an audience (internal or external) and must validate app domains when you submit.",
+    "status": "verified",
+    "src": 2
+   },
+   {
+    "text": "Insufficient test plan is a listed common rejection issue.",
+    "status": "verified",
+    "src": 3
+   },
+   {
+    "text": "Total elapsed time until approval.",
+    "status": "unverified",
+    "note": "Depends on how many rounds of feedback you need. Not stated."
+   }
+  ],
+  "sources": [
+   {
+    "title": "Zoom: How long does the App Review Process take?",
+    "url": "https://developers.zoom.us/blog/how-long-does-app-review-take/"
+   },
+   {
+    "title": "Zoom: App Review Process",
+    "url": "https://developers.zoom.us/docs/distribute/app-review-process/"
+   },
+   {
+    "title": "Zoom: Submit apps for review",
+    "url": "https://developers.zoom.us/docs/distribute/app-submission/submit-apps-review/"
+   },
+   {
+    "title": "Zoom: Common rejection issues",
+    "url": "https://developers.zoom.us/docs/distribute/app-submission/common-rejection-issues/"
+   }
+  ],
+  "tested": "Docs read only. No Zoom app was created."
+ },
+ {
+  "slug": "dropbox",
+  "name": "Dropbox",
+  "website": "https://www.dropbox.com",
+  "difficulty": 2,
+  "difficultyLabel": "Moderate",
+  "summary": "Self-serve to start. A new app can only link a few accounts. After 50 linked users you have two weeks to get production approval or the app freezes.",
+  "time": {
+   "devReady": "About 1 hour (inferred)",
+   "production": "Plan for the 2-week window after your 50th user",
+   "approvalWait": "Review duration not stated in the pages I read"
+  },
+  "managed": false,
+  "stages": [
+   {
+    "title": "Create the app and test",
+    "time": "1 hour",
+    "steps": [
+     "Create the app in the Dropbox App Console. It starts in development status and links only your own account.",
+     "Use 'Enable additional users' in the app info page to add a limited number of testers."
+    ]
+   },
+   {
+    "title": "Use least-privilege permissions",
+    "time": "Planning",
+    "steps": [
+     "Choose the narrowest permission type (for example an App folder instead of Full Dropbox). Reviewers check that you do not ask for broader access than your features need."
+    ]
+   },
+   {
+    "title": "Apply for production",
+    "time": "Before you reach 50 users",
+    "steps": [
+     "From the app info page, apply for production status. You supply how your app uses the API and an icon.",
+     "Follow the developer branding guidelines and terms; apps that do not are rejected.",
+     "Your request is not reviewed until the app has linked at least 50 Dropbox users."
+    ]
+   }
+  ],
+  "requirements": [
+   "App that follows Dropbox branding guidelines and terms",
+   "Description of how the app uses the API",
+   "App icon",
+   "Least-privilege permission scope"
+  ],
+  "blockers": [
+   {
+    "issue": "App freezes after 50 linked users if you have no production approval within two weeks",
+    "fix": "Apply early, as soon as you expect to pass 50 users. Unlinking users does not unfreeze it; only approval does."
+   },
+   {
+    "issue": "Rejected for broad permissions",
+    "fix": "If you need a broader permission for planned features, explain this in the application."
+   }
+  ],
+  "agentCan": [
+   "Choose the minimal permission type from your use case",
+   "Draft the production application text",
+   "Check your branding against the guidelines"
+  ],
+  "youDo": [
+   "Create and own the app in the App Console",
+   "Upload the icon and submit the production request"
+  ],
+  "claims": [
+   {
+    "text": "New apps have development status and can only link your own account plus a limited number of enabled accounts.",
+    "status": "verified",
+    "src": 0
+   },
+   {
+    "text": "Development apps can link up to 500 total users; once 50 are linked you have two weeks to apply for and receive production approval, or linking more users is frozen.",
+    "status": "verified",
+    "src": 0
+   },
+   {
+    "text": "A production request is not reviewed until at least 50 users are linked.",
+    "status": "verified",
+    "src": 0
+   },
+   {
+    "text": "Reviewers check that the app does not request an unnecessarily broad permission; apps that break branding guidelines or terms are rejected.",
+    "status": "verified",
+    "src": 0
+   },
+   {
+    "text": "Unfreezing needs production approval; unlinking users does not unfreeze.",
+    "status": "verified",
+    "src": 0
+   },
+   {
+    "text": "Dropbox can deny production requests at its sole discretion.",
+    "status": "verified",
+    "src": 1
+   },
+   {
+    "text": "How long the production review takes.",
+    "status": "unverified",
+    "note": "Not stated."
+   }
+  ],
+  "sources": [
+   {
+    "title": "Dropbox: Developer guide",
+    "url": "https://www.dropbox.com/developers/reference/developer-guide"
+   },
+   {
+    "title": "Dropbox: Terms and conditions",
+    "url": "https://www.dropbox.com/developers/reference/tos"
+   }
+  ],
+  "tested": "Docs read only. No Dropbox app was created."
+ },
+ {
+  "slug": "asana",
+  "name": "Asana",
+  "website": "https://asana.com",
+  "difficulty": 2,
+  "difficultyLabel": "Moderate",
+  "summary": "You can create an OAuth app and use it without any review. Review is only needed if you want the app in Asana's App Directory, which Asana aims to answer within a week.",
+  "time": {
+   "devReady": "About 1 hour (inferred)",
+   "production": "1-3 weeks if you list in the App Directory (inferred from the stated target)",
+   "approvalWait": "Asana aims for an initial response within one week; longer for apps using app components"
+  },
+  "managed": true,
+  "stages": [
+   {
+    "title": "Create the app and OAuth credentials",
+    "time": "30 min",
+    "steps": [
+     "Create the app in the Asana developer console and add redirect URLs.",
+     "Respect the OAuth state parameter. It is part of Asana's review checklist."
+    ]
+   },
+   {
+    "title": "Share it",
+    "time": "10 min",
+    "steps": [
+     "Choose who can use it: specific workspaces or any workspace. Apps submitted to the App Directory must be shared to Any workspace."
+    ]
+   },
+   {
+    "title": "Submit to the App Directory (optional)",
+    "time": "Days to weeks",
+    "steps": [
+     "Open 'Submit for review' in the developer console and complete the pre-flight checklist and listing details. The app cannot be edited while under review.",
+     "You get an email when the app is ready to publish, then click Publish. Failed checks come back with required changes."
+    ]
+   }
+  ],
+  "requirements": [
+   "Listing details and marketing copy ready",
+   "Authorization and security best practices tested",
+   "For app components: extra security and QA review"
+  ],
+  "blockers": [
+   {
+    "issue": "Cannot edit the app after submitting",
+    "fix": "Do your own QA pass first with Asana's checklist."
+   },
+   {
+    "issue": "App components make review slower",
+    "fix": "Plan extra time for the added security and QA review."
+   }
+  ],
+  "agentCan": [
+   "Run your self-QA against the published checklist",
+   "Draft the listing details",
+   "Test the OAuth flow including the state parameter"
+  ],
+  "youDo": [
+   "Create the app and submit it from your Asana account",
+   "Handle review emails and re-submissions"
+  ],
+  "claims": [
+   {
+    "text": "Submitting for review is not required to get a token; internal tools and testing can use an OAuth app without review.",
+    "status": "verified",
+    "src": 0
+   },
+   {
+    "text": "Apps submitted to the App Directory must be shared to Any workspace.",
+    "status": "verified",
+    "src": 1
+   },
+   {
+    "text": "Asana aims for an initial response within one week; app components can take longer because of security and QA review.",
+    "status": "verified",
+    "src": 0
+   },
+   {
+    "text": "Once submitted, the app is no longer open to edits; you get an email when it is ready to publish.",
+    "status": "verified",
+    "src": 0
+   },
+   {
+    "text": "Respecting the OAuth state parameter is a review requirement.",
+    "status": "inferred",
+    "note": "The approval checklist page for app components lists it; I only saw its search excerpt, not the full page."
+   }
+  ],
+  "sources": [
+   {
+    "title": "Asana: Publish your app",
+    "url": "https://developers.asana.com/docs/publish-your-app"
+   },
+   {
+    "title": "Asana: Share your app",
+    "url": "https://developers.asana.com/docs/share-your-app"
+   },
+   {
+    "title": "Asana: OAuth",
+    "url": "https://developers.asana.com/docs/oauth"
+   },
+   {
+    "title": "Asana: App component approval checklist",
+    "url": "https://developers.asana.com/docs/app-component-approval-checklist"
+   }
+  ],
+  "tested": "Docs read only. No Asana app was created."
+ },
+ {
+  "slug": "shopify",
+  "name": "Shopify",
+  "website": "https://www.shopify.com",
+  "difficulty": 3,
+  "difficultyLabel": "Moderate to hard",
+  "summary": "Your choice of distribution method decides everything and cannot be changed later. Custom distribution needs no approval. Public distribution (many stores) needs Shopify's approval.",
+  "time": {
+   "devReady": "Hours",
+   "production": "Weeks for public distribution (review duration not stated)",
+   "approvalWait": "Not stated in the pages I read"
+  },
+  "managed": false,
+  "stages": [
+   {
+    "title": "Pick the distribution method first",
+    "time": "1 hour",
+    "steps": [
+     "Custom distribution: one store, several stores in the same Plus organization, or development stores. No approval required. You cannot charge through Shopify's billing system.",
+     "Public distribution: installable on many stores. Approval required. Some data must sync with Shopify.",
+     "The method cannot be changed after you select it. If you have separate dev and production apps, set it on the production app."
+    ]
+   },
+   {
+    "title": "Prepare for review (public only)",
+    "time": "Days",
+    "steps": [
+     "Meet the App Store requirements and pass the automated checks.",
+     "Test on a development store in your Partner organization. Shopify pricing plans can be tested there at no charge.",
+     "If you use customer data, apply for Protected customer data access in the Partner Dashboard."
+    ]
+   },
+   {
+    "title": "Submit for review",
+    "time": "Not stated",
+    "steps": [
+     "Submit from the listing form. Shopify emails the submission contact during review; add noreply@shopify.com to your allowed senders."
+    ]
+   }
+  ],
+  "requirements": [
+   "Shopify Partner account",
+   "Following the Partner Program Agreement and API terms",
+   "Public apps: listing meeting App Store requirements; protected customer data access if you use customer data"
+  ],
+  "blockers": [
+   {
+    "issue": "Picked the wrong distribution method",
+    "fix": "It cannot be changed. Create a new app with the right method."
+   },
+   {
+    "issue": "Missed review emails",
+    "fix": "Allow noreply@shopify.com. If you lost access to the Partner email, contact Partner support."
+   },
+   {
+    "issue": "Old routes are gone",
+    "fix": "Private apps (deprecated 2022) and unpublished apps (deprecated 2019) are no longer an option."
+   }
+  ],
+  "agentCan": [
+   "Pick the distribution method from your use case",
+   "Check the app against the App Store requirements list",
+   "Draft the listing"
+  ],
+  "youDo": [
+   "Own the Partner account and development stores",
+   "Apply for protected customer data access",
+   "Submit and answer reviewers"
+  ],
+  "claims": [
+   {
+    "text": "Distribution method cannot be changed after you select it.",
+    "status": "verified",
+    "src": 0
+   },
+   {
+    "text": "Public distribution requires approval; custom distribution does not.",
+    "status": "verified",
+    "src": 0
+   },
+   {
+    "text": "Custom distribution can be installed on one store, stores in the same Plus organization, or development stores, and cannot charge through Shopify's billing system.",
+    "status": "verified",
+    "src": 0
+   },
+   {
+    "text": "Private apps (deprecated Jan 2022) and unpublished apps (deprecated Dec 2019) are deprecated.",
+    "status": "verified",
+    "src": 0
+   },
+   {
+    "text": "If the app uses customer data, you must apply for protected customer data access in the Partner Dashboard.",
+    "status": "verified",
+    "src": 2
+   },
+   {
+    "text": "Shopify emails the submission contact during review.",
+    "status": "verified",
+    "src": 1
+   },
+   {
+    "text": "Review duration.",
+    "status": "unverified",
+    "note": "Not found in the pages I read."
+   }
+  ],
+  "sources": [
+   {
+    "title": "Shopify: About app distribution",
+    "url": "https://shopify.dev/docs/apps/launch/distribution"
+   },
+   {
+    "title": "Shopify: Submit your app for review",
+    "url": "https://shopify.dev/docs/apps/launch/app-store-review/submit-app-for-review"
+   },
+   {
+    "title": "Shopify: Pass app review",
+    "url": "https://shopify.dev/docs/apps/launch/app-store-review/pass-app-review"
+   }
+  ],
+  "tested": "Docs read only. No Shopify Partner account was used."
+ },
+ {
+  "slug": "discord",
+  "name": "Discord",
+  "website": "https://discord.com",
+  "difficulty": 3,
+  "difficultyLabel": "Moderate",
+  "summary": "Self-serve and instant until your app reaches 100 servers. Past that you must verify the app, and the team owner has to verify their identity.",
+  "time": {
+   "devReady": "About 30 minutes (inferred)",
+   "production": "Depends on your identity check and the checklist (not stated)",
+   "approvalWait": "Not stated in the page I read"
+  },
+  "managed": true,
+  "stages": [
+   {
+    "title": "Build and test",
+    "time": "Under 1 hour",
+    "steps": [
+     "Create the application in the Discord developer portal and set OAuth2 redirects and scopes."
+    ]
+   },
+   {
+    "title": "Verify before 100 servers",
+    "time": "Not stated",
+    "steps": [
+     "Open the App Verification tab for your application. It shows a checklist of requirements.",
+     "The owner of the development team verifies their identity through Stripe, Discord's identity provider.",
+     "When every item is green, click Verify App."
+    ]
+   }
+  ],
+  "requirements": [
+   "Identity verification of the team owner (Stripe)",
+   "All checklist items green in the App Verification tab"
+  ],
+  "blockers": [
+   {
+    "issue": "Verification is required to grow past 100 servers",
+    "fix": "Start the checklist before you get close to the limit."
+   },
+   {
+    "issue": "You may be asked to re-verify your identity periodically",
+    "fix": "Keep the owner's ID details current."
+   }
+  ],
+  "agentCan": [
+   "Check your app against the checklist items you can see",
+   "Draft descriptions and policies the checklist asks for"
+  ],
+  "youDo": [
+   "The team owner does the Stripe identity check with their own ID",
+   "Click Verify App"
+  ],
+  "claims": [
+   {
+    "text": "Verification is required for your app to scale past 100 servers.",
+    "status": "verified",
+    "src": 0
+   },
+   {
+    "text": "The App Verification tab shows a checklist; when all items are met you can click Verify App.",
+    "status": "verified",
+    "src": 0
+   },
+   {
+    "text": "The development team owner must verify identity through Stripe, and may be asked to re-verify periodically.",
+    "status": "verified",
+    "src": 0
+   },
+   {
+    "text": "The article was published Aug 2024 (updated since).",
+    "status": "inferred",
+    "note": "Discord changes policy often. Check the live App Verification tab."
+   },
+   {
+    "text": "How long verification takes after you click Verify App.",
+    "status": "unverified",
+    "note": "Not stated."
+   }
+  ],
+  "sources": [
+   {
+    "title": "Discord: How Do I Get My App Verified?",
+    "url": "https://support-dev.discord.com/hc/en-us/articles/23926564536471-How-Do-I-Get-My-App-Verified"
+   }
+  ],
+  "tested": "Docs read only (one article). No Discord app was created."
+ },
+ {
+  "slug": "github",
+  "name": "GitHub",
+  "website": "https://github.com",
+  "difficulty": 1,
+  "difficultyLabel": "Easy",
+  "summary": "No review step was found. The real decision is OAuth app or GitHub App: GitHub Apps scale better and can act without a user, but organization owners may need to approve either one.",
+  "time": {
+   "devReady": "About 30 minutes (inferred)",
+   "production": "Same day (inferred). Customer organizations may add their own approval step",
+   "approvalWait": "No GitHub review found in the pages I read"
+  },
+  "managed": true,
+  "stages": [
+   {
+    "title": "Choose the app type",
+    "time": "15 min",
+    "steps": [
+     "GitHub App: can act independently or on behalf of a user, built-in webhooks, higher rate limits that scale with repos and org users.",
+     "OAuth app: simpler, lower rate limits that do not scale. Preferred only when you need enterprise-level resources, which GitHub Apps cannot yet get permissions for."
+    ]
+   },
+   {
+    "title": "Register it",
+    "time": "15 min",
+    "steps": [
+     "Register under your personal account or any organization you own."
+    ]
+   },
+   {
+    "title": "Let organizations approve it",
+    "time": "Depends on the customer",
+    "steps": [
+     "Installing a GitHub App on an org needs an org owner or repo admin. If it asks for organization permissions, an owner must approve.",
+     "If an organization has an OAuth app access policy, members can request your OAuth app and an owner approves or denies it."
+    ]
+   }
+  ],
+  "requirements": [
+   "A GitHub account or organization to own the app"
+  ],
+  "blockers": [
+   {
+    "issue": "Customer org blocks your app",
+    "fix": "Ask their owner to approve it. Document exactly which permissions you need and why."
+   },
+   {
+    "issue": "Need enterprise-level data",
+    "fix": "Use an OAuth app, since GitHub Apps cannot be given enterprise permissions yet."
+   }
+  ],
+  "agentCan": [
+   "Pick the app type from your use case",
+   "Write the install and permission request guide for customer org owners"
+  ],
+  "youDo": [
+   "Register the app while signed in",
+   "Talk to customer org owners if they must approve"
+  ],
+  "claims": [
+   {
+    "text": "GitHub Apps can act independently of a user; OAuth apps have lower rate limits that do not scale.",
+    "status": "verified",
+    "src": 0
+   },
+   {
+    "text": "An OAuth app is preferred when you need enterprise-level resources.",
+    "status": "verified",
+    "src": 0
+   },
+   {
+    "text": "An org owner or repo admin must install a GitHub App on an organization; owners approve org-level permissions.",
+    "status": "verified",
+    "src": 0
+   },
+   {
+    "text": "With an organization application policy active, members can request an OAuth app and an owner approves or denies.",
+    "status": "verified",
+    "src": 0
+   },
+   {
+    "text": "You can register a GitHub App under a personal account or an organization you own.",
+    "status": "verified",
+    "src": 2
+   },
+   {
+    "text": "Whether listing in GitHub Marketplace needs a review.",
+    "status": "unverified",
+    "note": "Not checked in this pass."
+   }
+  ],
+  "sources": [
+   {
+    "title": "GitHub: Differences between GitHub Apps and OAuth apps",
+    "url": "https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/differences-between-github-apps-and-oauth-apps"
+   },
+   {
+    "title": "GitHub: Authorizing GitHub Apps",
+    "url": "https://docs.github.com/en/apps/using-github-apps/authorizing-github-apps"
+   },
+   {
+    "title": "GitHub: Registering a GitHub App",
+    "url": "https://docs.github.com/en/developers/apps/creating-a-github-app"
+   }
+  ],
+  "tested": "Docs read only. No GitHub app was registered."
+ },
+ {
+  "slug": "atlassian",
+  "name": "Atlassian (Jira, Confluence)",
+  "dirName": "Jira",
+  "website": "https://developer.atlassian.com",
+  "difficulty": 2,
+  "difficultyLabel": "Moderate",
+  "summary": "New OAuth 2.0 (3LO) apps work only for their creator until you turn on distribution. You do not need a Marketplace listing to share one.",
+  "time": {
+   "devReady": "About 1 hour (inferred)",
+   "production": "Same day once distribution is on (inferred)",
+   "approvalWait": "No Atlassian approval found for sharing; Marketplace listing is a separate path, not researched"
+  },
+  "managed": true,
+  "stages": [
+   {
+    "title": "Create the app",
+    "time": "30 min",
+    "steps": [
+     "Create the OAuth 2.0 (3LO) app in the developer console. It starts in developer mode and works only for you."
+    ]
+   },
+   {
+    "title": "Enable distribution",
+    "time": "10 min",
+    "steps": [
+     "Turn on distribution in the developer console so other people can authorize it.",
+     "Enabling sharing does not put the app on the Atlassian Marketplace.",
+     "3LO apps are installed per user: your own web app's authorization URL is the link."
+    ]
+   },
+   {
+    "title": "Pick consent scope",
+    "time": "Planning",
+    "steps": [
+     "Account-level grant: one consent can cover several sites where your app is installed.",
+     "Resource-level grant: consent limited to the sites the user selects."
+    ]
+   }
+  ],
+  "requirements": [
+   "Atlassian developer account",
+   "Redirect URL and scopes",
+   "For Forge apps: site admin to install"
+  ],
+  "blockers": [
+   {
+    "issue": "Your app tells customers to create their own 3LO app or collect API tokens",
+    "fix": "Atlassian says apps that do this do not comply with its security requirements and acceptable use policy."
+   },
+   {
+    "issue": "Others get an error on your authorization URL",
+    "fix": "You are still in developer mode. Turn distribution on."
+   },
+   {
+    "issue": "Forge app with a license or Marketplace submission cannot be shared by link",
+    "fix": "Copy the code into a new unlicensed app and share that for testing."
+   }
+  ],
+  "agentCan": [
+   "Write the authorization URL and token exchange",
+   "Choose between account-level and resource-level consent",
+   "Check your design against Atlassian's security requirements"
+  ],
+  "youDo": [
+   "Create the app and enable distribution in the console",
+   "For Forge sharing: a site admin installs it"
+  ],
+  "claims": [
+   {
+    "text": "Apps that collect API tokens or tell customers to create individual 3LO apps do not comply with Atlassian's security requirements and acceptable use policy.",
+    "status": "verified",
+    "src": 0
+   },
+   {
+    "text": "Forge: sharing generates an install link; the installer must be a site admin. Apps already licensed or submitted to Marketplace cannot be shared by link.",
+    "status": "verified",
+    "src": 1
+   },
+   {
+    "text": "Consent can be account-level (covers several sites) or resource-level (selected sites).",
+    "status": "verified",
+    "src": 0
+   },
+   {
+    "text": "A new 3LO app works only for its creator until distribution is on, and enabling sharing does not list it on Marketplace.",
+    "status": "inferred",
+    "note": "Stated in a community forum post that quotes the docs; I did not find the exact docs page."
+   },
+   {
+    "text": "Marketplace listing review.",
+    "status": "unverified",
+    "note": "Not researched."
+   }
+  ],
+  "sources": [
+   {
+    "title": "Atlassian: OAuth 2.0 (3LO) apps",
+    "url": "https://developer.atlassian.com/cloud/jira/platform/oauth-2-3lo-apps/"
+   },
+   {
+    "title": "Atlassian: Distribute Forge apps",
+    "url": "https://developer.atlassian.com/platform/forge/distribute-your-apps/"
+   },
+   {
+    "title": "Atlassian community: do I need Marketplace to share a 3LO app?",
+    "url": "https://community.developer.atlassian.com/t/do-i-really-need-to-list-my-oauth-2-0-3lo-app-on-marketplace-to-share-with-other-people/69937"
+   }
+  ],
+  "tested": "Docs and one forum post read. No Atlassian app was created."
+ },
+ {
+  "slug": "microsoft",
+  "name": "Microsoft Outlook (Entra ID)",
+  "dirName": "Outlook",
+  "website": "https://learn.microsoft.com/en-us/entra/identity-platform/",
+  "difficulty": 3,
+  "difficultyLabel": "Moderate to hard (for other companies' users)",
+  "summary": "Registering the app is quick. To be used across other organizations without admin friction you need a verified publisher, which needs a verified Microsoft Partner account. Admins often must consent.",
+  "time": {
+   "devReady": "About 30 minutes (inferred)",
+   "production": "Days to weeks, mostly getting a verified Partner account if you lack one (inferred)",
+   "approvalWait": "Microsoft: if prerequisites are met, verification takes minutes"
+  },
+  "managed": true,
+  "stages": [
+   {
+    "title": "Register the app",
+    "time": "30 min",
+    "steps": [
+     "Register the app in a Microsoft Entra tenant (needs at least Application Developer role).",
+     "Set a publisher domain."
+    ]
+   },
+   {
+    "title": "Verify your publisher",
+    "time": "Minutes to days",
+    "steps": [
+     "Use a verified Microsoft AI Cloud Partner Program (CPP) account that is your organization's partner global account.",
+     "The email domain used for CPP verification must match the app's publisher domain or be a DNS-verified custom domain in the tenant. *.onmicrosoft.com does not work.",
+     "Whoever starts verification needs the right role in both Entra ID and Partner Center."
+    ]
+   },
+   {
+    "title": "Plan consent",
+    "time": "Planning",
+    "steps": [
+     "For apps in external tenants, users often cannot consent themselves: an administrator must grant consent.",
+     "Static consent asks for every permission up front and can scare off admins. Dynamic consent lets you ask incrementally, but admin-consent permissions are harder."
+    ]
+   }
+  ],
+  "requirements": [
+   "Microsoft Entra tenant",
+   "Verified CPP / Partner Center account",
+   "Publisher domain matching your CPP email domain"
+  ],
+  "blockers": [
+   {
+    "issue": "Users cannot consent to your newly registered multi-tenant app",
+    "fix": "Since Nov 2020, with risk-based step-up consent on, users cannot consent to most such apps that are not publisher verified. Get verified, or ask admins to consent."
+   },
+   {
+    "issue": "Verification fails on domain",
+    "fix": "Fix the publisher domain. It cannot be *.onmicrosoft.com."
+   },
+   {
+    "issue": "Not supported in Azure AD B2C tenants",
+    "fix": "Register in a workforce or external tenant."
+   }
+  ],
+  "agentCan": [
+   "Check your domain and role prerequisites",
+   "Draft the admin-consent request for customers",
+   "Choose static or dynamic consent"
+  ],
+  "youDo": [
+   "Own the Entra tenant and Partner Center account",
+   "Complete verification with the right roles",
+   "Customer admins grant consent"
+  ],
+  "claims": [
+   {
+    "text": "Publisher verification needs a verified CPP account that is the partner global account, and a publisher domain set on the app.",
+    "status": "verified",
+    "src": 0
+   },
+   {
+    "text": "Verification takes minutes when prerequisites are met and has no charges for the prerequisites.",
+    "status": "verified",
+    "src": 0
+   },
+   {
+    "text": "Since Nov 2020, with risk-based step-up consent enabled, users cannot consent to most newly registered unverified multitenant apps asking beyond basic sign-in.",
+    "status": "verified",
+    "src": 0
+   },
+   {
+    "text": "For apps in external tenants, customers cannot consent themselves; an administrator must grant consent.",
+    "status": "verified",
+    "src": 1
+   },
+   {
+    "text": "Time to get a verified Partner account if you do not have one.",
+    "status": "unverified",
+    "note": "Not stated."
+   }
+  ],
+  "sources": [
+   {
+    "title": "Microsoft: Publisher verification",
+    "url": "https://learn.microsoft.com/en-us/entra/identity-platform/publisher-verification-overview"
+   },
+   {
+    "title": "Microsoft: Consent types for developers",
+    "url": "https://learn.microsoft.com/en-us/entra/identity-platform/consent-types-developer"
+   }
+  ],
+  "tested": "Docs read only. No Entra app was registered."
+ }
+]
